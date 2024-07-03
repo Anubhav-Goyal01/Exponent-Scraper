@@ -1,5 +1,16 @@
 from playwright.sync_api import sync_playwright
 import time
+import gspread
+from google.oauth2.service_account import Credentials
+
+
+scope = ["https://www.googleapis.com/auth/spreadsheets"]
+credentials = Credentials.from_service_account_file("credentials.json", scopes=scope)
+client = gspread.authorize(credentials)
+
+workbook = client.open_by_key("1YqZB6jw8KQXoS8CB5lz7mHAX2AjOQB73SGYj1JfsK_o")
+worksheet = workbook.worksheet("Sheet1")
+
 
 def scrape_questions(url, total_pages):
     with sync_playwright() as p:
@@ -19,7 +30,7 @@ def scrape_questions(url, total_pages):
         questions_elements.nth(0).click(force=True) 
         time.sleep(30)
 
-        for page_number in range(1, total_pages + 1):
+        for page_number in range(7, total_pages + 1):
             if page_number > 1:
                 url = f"https://www.tryexponent.com/questions" + f"?page={page_number}"
                 page.goto(url)
@@ -31,22 +42,16 @@ def scrape_questions(url, total_pages):
             for i in range(number_of_questions):
                 try:
                 # Navigate to each question's link
-                    current_question = {}
                     question_element = questions_elements.nth(i)
                     question_element.click(force=True)  # Click the link
                   
                     page.wait_for_selector('h1[class*="inline align-middle mr-2"]')  # Adjust class selector as needed
                     question_link = page.url
                     print(f"Question Link: {question_link}")
-                    current_question['question_link'] = question_link
-
-
-                    question = page.locator('h1[class*="inline align-middle mr-2"]').inner_text()
+    
+                    question = page.locator('h1[class*="inline align-middle mr-2"]').inner_text(timeout=2000)
                     # asked at div[class*=[flex justify-start mt-2] span span
-                    asked_at = page.locator('div[class*="flex justify-start mt-2"] span span').nth(0).inner_text()
-
-                    current_question['question'] = question
-                    current_question['asked_at'] = asked_at
+                    asked_at = page.locator('div[class*="flex justify-start mt-2"] span span').nth(0).inner_text(timeout=2000)
 
                     print(f"Question: {question}\nAsked at: {asked_at}")
 
@@ -59,15 +64,31 @@ def scrape_questions(url, total_pages):
                     answers = []
                     for j in range(number_of_comments):
                         comment = comments.nth(j)
-                        answer = comment.locator('div[class*="comment-message-chop"]').inner_text()
+                        answer = comment.locator('div[class*="comment-message-chop"]').inner_text(timeout=2000)
                         answers.append(answer)
 
-                    current_question['answers'] = [answer for answer in answers if answer]
-                    # Go back to the main list (adjust based on the actual navigation needs)
+                    data = []
+                    data.append(question)
+                    data.append(asked_at)
+                    data.append(question_link)
+                    # append answers 1 by 1
+                    for answer in answers:
+                        data.append(answer)
+
+                    worksheet.append_row(data)
+
+
                     page.goto(url)
                     page.wait_for_selector('xpath=//*[@id="__next"]/div[2]/div/div[3]/div[1]/div[1]/ul')
                 except Exception as e:
                     print(f"Error: continuing to the next question due to {e}")
+
+                    data = []
+                    data.append(question)
+                    data.append(asked_at)
+                    data.append(question_link)
+                    worksheet.append_row(data)
+
                     page.goto(url)
                     page.wait_for_selector('xpath=//*[@id="__next"]/div[2]/div/div[3]/div[1]/div[1]/ul')
                     continue
