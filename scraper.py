@@ -26,7 +26,6 @@ def scrape_questions(url, total_pages):
                 page.wait_for_selector('xpath=//*[@id="__next"]/div[2]/div/div[3]/div[1]/div[1]/ul')
 
             questions_elements = page.locator('xpath=//*[@id="__next"]/div[2]/div/div[3]/div[1]/div[1]/ul/li/div/div/div[1]/div/div[1]/h3/a')
-            questions_elements.nth(0).click(force=True) 
             number_of_questions = questions_elements.count()          
 
             for i in range(number_of_questions):
@@ -34,12 +33,13 @@ def scrape_questions(url, total_pages):
                 # Navigate to each question's link
                     current_question = {}
                     question_element = questions_elements.nth(i)
-                    question_link = question_element.get_attribute('href')
+                    question_element.click(force=True)  # Click the link
+                  
+                    page.wait_for_selector('h1[class*="inline align-middle mr-2"]')  # Adjust class selector as needed
+                    question_link = page.url
                     print(f"Question Link: {question_link}")
                     current_question['question_link'] = question_link
-                    question_element.click(force=True)  # Click the link
 
-                    page.wait_for_selector('h1[class*="inline align-middle mr-2"]')  # Adjust class selector as needed
 
                     question = page.locator('h1[class*="inline align-middle mr-2"]').inner_text()
                     # asked at div[class*=[flex justify-start mt-2] span span
@@ -67,7 +67,7 @@ def scrape_questions(url, total_pages):
                     page.goto(url)
                     page.wait_for_selector('xpath=//*[@id="__next"]/div[2]/div/div[3]/div[1]/div[1]/ul')
                 except Exception as e:
-                    print(f"Error: continuing to the next question")
+                    print(f"Error: continuing to the next question due to {e}")
                     page.goto(url)
                     page.wait_for_selector('xpath=//*[@id="__next"]/div[2]/div/div[3]/div[1]/div[1]/ul')
                     continue
