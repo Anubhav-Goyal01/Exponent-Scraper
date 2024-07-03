@@ -21,34 +21,42 @@ def scrape_questions(url):
 
         time.sleep(35)
         for i in range(number_of_questions):
+            try:
             # Navigate to each question's link
-            question_element = questions_elements.nth(i)
-            question_element.click(force=True)  # Click the link
+                question_element = questions_elements.nth(i)
+                question_element.click(force=True)  # Click the link
 
-            page.wait_for_selector('h1[class*="inline align-middle mr-2"]')  # Adjust class selector as needed
+                page.wait_for_selector('h1[class*="inline align-middle mr-2"]')  # Adjust class selector as needed
 
-            question = page.locator('h1[class*="inline align-middle mr-2"]').inner_text()
-            # asked at div[class*=[flex justify-start mt-2] span span
-            asked_at = page.locator('div[class*="flex justify-start mt-2"] span span').nth(0).inner_text()
+                question = page.locator('h1[class*="inline align-middle mr-2"]').inner_text()
+                # asked at div[class*=[flex justify-start mt-2] span span
+                asked_at = page.locator('div[class*="flex justify-start mt-2"] span span').nth(0).inner_text()
 
-            print(f"Question: {question}\nAsked at: {asked_at}")
+                print(f"Question: {question}\nAsked at: {asked_at}")
 
-            # div that contains all divs
-            # class="comment border border-gray-200 rounded-lg mb-3"
-            comments = page.locator('div[class*="comment border border-gray-200 rounded-lg mb-3"]')
-            number_of_comments = comments.count()
-            answers = []
-            for j in range(number_of_comments):
-                comment = comments.nth(j)
-                answer = comment.locator('div[class*="comment-message-chop"]').inner_text()
-                answers.append(answer)
+                # div that contains all divs
+                # class="comment border border-gray-200 rounded-lg mb-3"
+                page.wait_for_selector('div[class*="comment border border-gray-200 rounded-lg mb-3"]')  # Adjust class selector as needed
+                comments = page.locator('div[class*="comment border border-gray-200 rounded-lg mb-3"]')
+                print(comments.count())
+                number_of_comments = comments.count()
+                answers = []
+                for j in range(number_of_comments):
+                    comment = comments.nth(j)
+                    answer = comment.locator('div[class*="comment-message-chop"]').inner_text()
+                    answers.append(answer)
 
-            for i, answer in enumerate(answers):
-                print(f"Answer {i+1}: {answer}")
+                for i, answer in enumerate(answers):
+                    print(f"Answer {i+1}: {answer}")
 
-            # Go back to the main list (adjust based on the actual navigation needs)
-            page.goto(url)
-            page.wait_for_selector('xpath=//*[@id="__next"]/div[2]/div/div[3]/div[1]/div[1]/ul')
+                # Go back to the main list (adjust based on the actual navigation needs)
+                page.goto(url)
+                page.wait_for_selector('xpath=//*[@id="__next"]/div[2]/div/div[3]/div[1]/div[1]/ul')
+            except Exception as e:
+                print(f"Error: continuing to the next question")
+                page.goto(url)
+                page.wait_for_selector('xpath=//*[@id="__next"]/div[2]/div/div[3]/div[1]/div[1]/ul')
+                continue
 
         time.sleep(1000)
 
