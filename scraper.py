@@ -30,7 +30,7 @@ def scrape_questions(url, total_pages):
         questions_elements.nth(0).click(force=True) 
         time.sleep(30)
 
-        for page_number in range(7, total_pages + 1):
+        for page_number in range(135, total_pages + 1):
             if page_number > 1:
                 url = f"https://www.tryexponent.com/questions" + f"?page={page_number}"
                 page.goto(url)
@@ -55,6 +55,22 @@ def scrape_questions(url, total_pages):
 
                     print(f"Question: {question}\nAsked at: {asked_at}")
 
+
+                    container_divs = page.locator('div.flex.flex-col.py-4.gap-y-3 > div')
+
+                    try:
+                        role = container_divs.nth(0).locator('a').inner_text(timeout=2000)
+                    except Exception:
+                        role = None
+                    try:
+                        companies = container_divs.nth(1).locator('a').inner_text(timeout=2000)
+                    except Exception:
+                        companies = None
+                    try:
+                        products = container_divs.nth(2).locator('a').inner_text(timeout=2000)
+                    except Exception:
+                        products = None
+
                     # div that contains all divs
                     # class="comment border border-gray-200 rounded-lg mb-3"
                     page.wait_for_selector('div[class*="comment border border-gray-200 rounded-lg mb-3"]')  # Adjust class selector as needed
@@ -71,6 +87,9 @@ def scrape_questions(url, total_pages):
                     data.append(question)
                     data.append(asked_at)
                     data.append(question_link)
+                    data.append(role)
+                    data.append(companies)
+                    data.append(products)
                     # append answers 1 by 1
                     for answer in answers:
                         data.append(answer)
@@ -87,6 +106,9 @@ def scrape_questions(url, total_pages):
                     data.append(question)
                     data.append(asked_at)
                     data.append(question_link)
+                    data.append(role)
+                    data.append(companies)
+                    data.append(products)
                     worksheet.append_row(data)
 
                     page.goto(url)
